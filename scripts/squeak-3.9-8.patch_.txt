@@ -1,0 +1,1077 @@
+*** ./platforms/unix/vm/sqUnixExternalPrims.c.orig	2006-04-24 13:23:22.000000000 +0900
+--- ./platforms/unix/vm/sqUnixExternalPrims.c	2017-11-06 20:23:44.569906083 +0900
+***************
+*** 44,52 ****
+  #include "sq.h"		/* sqUnixConfig.h */
+  
+  #if (DEBUG)
+! # define dprintf(ARGS) fprintf ARGS
+  #else
+! # define dprintf(ARGS)
+  #endif
+   
+  #if !defined(HAVE_LIBDL) && defined(HAVE_DYLD)
+--- 44,52 ----
+  #include "sq.h"		/* sqUnixConfig.h */
+  
+  #if (DEBUG)
+! # define debugf(ARGS) fprintf ARGS
+  #else
+! # define debugf(ARGS)
+  #endif
+   
+  #if !defined(HAVE_LIBDL) && defined(HAVE_DYLD)
+***************
+*** 143,152 ****
+  	int         err;
+  	sprintf(libName, "%s%s%s%s", dirName, *prefix, moduleName, *suffix);
+  	if ((!(err= stat(libName, &buf))) && S_ISDIR(buf.st_mode))
+! 	  dprintf((stderr, "ignoring directory: %s\n", libName));
+  	else
+  	  {
+! 	    dprintf((stderr, "tryLoading %s\n", libName));
+  	    handle= dlopen(libName, RTLD_NOW | RTLD_GLOBAL);
+  	    if (handle == 0)
+  	      {
+--- 143,152 ----
+  	int         err;
+  	sprintf(libName, "%s%s%s%s", dirName, *prefix, moduleName, *suffix);
+  	if ((!(err= stat(libName, &buf))) && S_ISDIR(buf.st_mode))
+! 	  debugf((stderr, "ignoring directory: %s\n", libName));
+  	else
+  	  {
+! 	    debugf((stderr, "tryLoading %s\n", libName));
+  	    handle= dlopen(libName, RTLD_NOW | RTLD_GLOBAL);
+  	    if (handle == 0)
+  	      {
+***************
+*** 174,180 ****
+    if (path)
+      {
+        char pbuf[MAXPATHLEN];
+!       dprintf((stderr, "try %s=%s\n", varName, path));
+        strncpy(pbuf, path, sizeof(pbuf));
+        pbuf[sizeof(pbuf) - 1]= '\0';
+        for (path= strtok(pbuf, ":");
+--- 174,180 ----
+    if (path)
+      {
+        char pbuf[MAXPATHLEN];
+!       debugf((stderr, "try %s=%s\n", varName, path));
+        strncpy(pbuf, path, sizeof(pbuf));
+        pbuf[sizeof(pbuf) - 1]= '\0';
+        for (path= strtok(pbuf, ":");
+***************
+*** 183,189 ****
+  	{
+  	  char buf[MAXPATHLEN];
+  	  sprintf(buf, "%s/", path);
+! 	  dprintf((stderr, "  path dir = %s\n", buf));
+  	  if ((handle= tryLoading(buf, pluginName)) != 0)
+  	    break;
+  	}
+--- 183,189 ----
+  	{
+  	  char buf[MAXPATHLEN];
+  	  sprintf(buf, "%s/", path);
+! 	  debugf((stderr, "  path dir = %s\n", buf));
+  	  if ((handle= tryLoading(buf, pluginName)) != 0)
+  	    break;
+  	}
+***************
+*** 206,212 ****
+  	fprintf(stderr, "ioLoadModule(<intrinsic>): %s\n", dlerror());
+        else
+  	{
+! 	  dprintf((stderr, "loaded: <intrinsic>\n"));
+  	  return handle;
+  	}
+      }
+--- 206,212 ----
+  	fprintf(stderr, "ioLoadModule(<intrinsic>): %s\n", dlerror());
+        else
+  	{
+! 	  debugf((stderr, "loaded: <intrinsic>\n"));
+  	  return handle;
+  	}
+      }
+***************
+*** 227,233 ****
+  	      *out++= c;
+  	  }
+  	*out= '\0';
+! 	dprintf((stderr, "ioLoadModule plugins = %s\n                path = %s\n",
+  		 squeakPlugins, path));
+  	if ((handle= tryLoading("", path)))
+  	  return handle;
+--- 227,233 ----
+  	      *out++= c;
+  	  }
+  	*out= '\0';
+! 	debugf((stderr, "ioLoadModule plugins = %s\n                path = %s\n",
+  		 squeakPlugins, path));
+  	if ((handle= tryLoading("", path)))
+  	  return handle;
+***************
+*** 319,325 ****
+  
+    fn= dlsym(moduleHandle, buf);
+  
+!   dprintf((stderr, "ioFindExternalFunctionIn(%s, %d)\n",
+  	   lookupName, moduleHandle));
+  
+    if ((fn == 0) && (!sqIgnorePluginErrors)
+--- 319,325 ----
+  
+    fn= dlsym(moduleHandle, buf);
+  
+!   debugf((stderr, "ioFindExternalFunctionIn(%s, %d)\n",
+  	   lookupName, moduleHandle));
+  
+    if ((fn == 0) && (!sqIgnorePluginErrors)
+***************
+*** 342,348 ****
+  {
+    if (dlclose(moduleHandle))
+      {
+!       dprintf((stderr, "ioFreeModule(%d): %s\n", moduleHandle, dlerror()));
+        return 0;
+      }
+    return 1;
+--- 342,348 ----
+  {
+    if (dlclose(moduleHandle))
+      {
+!       debugf((stderr, "ioFreeModule(%d): %s\n", moduleHandle, dlerror()));
+        return 0;
+      }
+    return 1;
+*** ./platforms/unix/vm/dlfcn-dyld.c.orig	2006-04-16 03:13:44.000000000 +0900
+--- ./platforms/unix/vm/dlfcn-dyld.c	2017-11-06 20:23:44.557912100 +0900
+***************
+*** 79,85 ****
+  
+  static NSModule dlMultiple(NSSymbol s, NSModule oldModule, NSModule newModule)
+  {
+!   dprintf((stderr, "dyld: %s: %s previously defined in %s, new definition in %s\n",
+  	   NSNameOfSymbol(s), NSNameOfModule(oldModule), NSNameOfModule(newModule)));
+    return newModule;
+  }
+--- 79,85 ----
+  
+  static NSModule dlMultiple(NSSymbol s, NSModule oldModule, NSModule newModule)
+  {
+!   debugf((stderr, "dyld: %s: %s previously defined in %s, new definition in %s\n",
+  	   NSNameOfSymbol(s), NSNameOfModule(oldModule), NSNameOfModule(newModule)));
+    return newModule;
+  }
+***************
+*** 137,143 ****
+    if (!handle)
+      dlSetError("could not load shared object: %s", path);
+  
+!   dprintf((stderr, "dlopen: %s => %d\n", path, (int)handle));
+  
+    return handle;
+  }
+--- 137,143 ----
+    if (!handle)
+      dlSetError("could not load shared object: %s", path);
+  
+!   debugf((stderr, "dlopen: %s => %d\n", path, (int)handle));
+  
+    return handle;
+  }
+***************
+*** 150,166 ****
+  
+    snprintf(_symbol, sizeof(_symbol), "_%s", symbol);
+  
+!   dprintf((stderr, "dlsym: looking for %s (%s) in %d\n", symbol, _symbol, (int)handle));
+  
+    if (!handle)
+      {
+!       dprintf((stderr, "dlsym: setting app context for this handle\n"));
+        handle= DL_APP_CONTEXT;
+      }
+  
+    if (DL_APP_CONTEXT == handle)
+      {
+!       dprintf((stderr, "dlsym: looking in app context\n"));
+        if (NSIsSymbolNameDefined(_symbol))
+  	nsSymbol= NSLookupAndBindSymbol(_symbol);
+      }
+--- 150,166 ----
+  
+    snprintf(_symbol, sizeof(_symbol), "_%s", symbol);
+  
+!   debugf((stderr, "dlsym: looking for %s (%s) in %d\n", symbol, _symbol, (int)handle));
+  
+    if (!handle)
+      {
+!       debugf((stderr, "dlsym: setting app context for this handle\n"));
+        handle= DL_APP_CONTEXT;
+      }
+  
+    if (DL_APP_CONTEXT == handle)
+      {
+!       debugf((stderr, "dlsym: looking in app context\n"));
+        if (NSIsSymbolNameDefined(_symbol))
+  	nsSymbol= NSLookupAndBindSymbol(_symbol);
+      }
+***************
+*** 176,190 ****
+  		 _symbol,
+  		 NSLOOKUPSYMBOLINIMAGE_OPTION_BIND
+  		 /*| NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR*/);
+! 	      dprintf((stderr, "dlsym: bundle (image) lookup returned %p\n", nsSymbol));
+  	    }
+  	  else
+! 	    dprintf((stderr, "dlsym: bundle (image) symbol not defined\n"));
+  	}
+        else
+  	{
+  	  nsSymbol= NSLookupSymbolInModule(handle, _symbol);
+! 	  dprintf((stderr, "dlsym: dylib (module) lookup returned %p\n", nsSymbol));
+  	}
+      }
+  
+--- 176,190 ----
+  		 _symbol,
+  		 NSLOOKUPSYMBOLINIMAGE_OPTION_BIND
+  		 /*| NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR*/);
+! 	      debugf((stderr, "dlsym: bundle (image) lookup returned %p\n", nsSymbol));
+  	    }
+  	  else
+! 	    debugf((stderr, "dlsym: bundle (image) symbol not defined\n"));
+  	}
+        else
+  	{
+  	  nsSymbol= NSLookupSymbolInModule(handle, _symbol);
+! 	  debugf((stderr, "dlsym: dylib (module) lookup returned %p\n", nsSymbol));
+  	}
+      }
+  
+*** ./platforms/unix/vm/debug.c.orig	2006-04-06 02:40:06.000000000 +0900
+--- ./platforms/unix/vm/debug.c	2017-11-06 20:23:44.557912100 +0900
+***************
+*** 4,10 ****
+  #include <stdarg.h>
+  #include <string.h>
+  
+! void __sq_dprintf(const char *fmt, ...)
+  {
+    va_list ap;
+    va_start(ap, fmt);
+--- 4,10 ----
+  #include <stdarg.h>
+  #include <string.h>
+  
+! void __sq_debugf(const char *fmt, ...)
+  {
+    va_list ap;
+    va_start(ap, fmt);
+*** ./platforms/unix/vm/debug.h.orig	2006-04-06 02:40:06.000000000 +0900
+--- ./platforms/unix/vm/debug.h	2017-11-06 20:24:54.854748552 +0900
+***************
+*** 12,21 ****
+    ** them when running in precomp mode.  did they _really_ have to break
+    ** the preprocessor just to implement precomp?  good _grief_.
+    */
+!   extern void __sq_dprintf(const char *fmt, ...);
+! # define dprintf(ARGS) __sq_dprintf ARGS
+  #else
+! # define dprintf(ARGS)	((void)0)
+  #endif
+  
+  
+--- 12,21 ----
+    ** them when running in precomp mode.  did they _really_ have to break
+    ** the preprocessor just to implement precomp?  good _grief_.
+    */
+!   extern void __sq_debugf(const char *fmt, ...);
+! # define debugf(ARGS) __sq_debugf ARGS
+  #else
+! # define debugf(ARGS)	((void)0)
+  #endif
+  
+  
+*** ./platforms/unix/vm/sqUnixMemory.c.orig	2006-04-06 02:40:06.000000000 +0900
+--- ./platforms/unix/vm/sqUnixMemory.c	2017-11-06 20:23:44.573904082 +0900
+***************
+*** 125,131 ****
+    pageSize= getpagesize();
+    pageMask= ~(pageSize - 1);
+  
+!   dprintf(("uxAllocateMemory: pageSize 0x%x (%d), mask 0x%x\n", pageSize, pageSize, pageMask));
+  
+  #if (!MAP_ANON)
+    if ((devZero= open("/dev/zero", O_RDWR)) < 0)
+--- 125,131 ----
+    pageSize= getpagesize();
+    pageMask= ~(pageSize - 1);
+  
+!   debugf(("uxAllocateMemory: pageSize 0x%x (%d), mask 0x%x\n", pageSize, pageSize, pageMask));
+  
+  #if (!MAP_ANON)
+    if ((devZero= open("/dev/zero", O_RDWR)) < 0)
+***************
+*** 135,148 ****
+      }
+  #endif
+  
+!   dprintf(("uxAllocateMemory: /dev/zero descriptor %d\n", devZero));
+!   dprintf(("uxAllocateMemory: min heap %d, desired %d\n", minHeapSize, desiredHeapSize));
+  
+    heapLimit= valign(max(desiredHeapSize, useMmap));
+  
+    while ((!heap) && (heapLimit >= minHeapSize))
+      {
+!       dprintf(("uxAllocateMemory: mapping 0x%08x bytes (%d Mbytes)\n", heapLimit, heapLimit >> 20));
+        if (MAP_FAILED == (heap= mmap(0, heapLimit, MAP_PROT, MAP_FLAGS, devZero, 0)))
+  	{
+  	  heap= 0;
+--- 135,148 ----
+      }
+  #endif
+  
+!   debugf(("uxAllocateMemory: /dev/zero descriptor %d\n", devZero));
+!   debugf(("uxAllocateMemory: min heap %d, desired %d\n", minHeapSize, desiredHeapSize));
+  
+    heapLimit= valign(max(desiredHeapSize, useMmap));
+  
+    while ((!heap) && (heapLimit >= minHeapSize))
+      {
+!       debugf(("uxAllocateMemory: mapping 0x%08x bytes (%d Mbytes)\n", heapLimit, heapLimit >> 20));
+        if (MAP_FAILED == (heap= mmap(0, heapLimit, MAP_PROT, MAP_FLAGS, devZero, 0)))
+  	{
+  	  heap= 0;
+***************
+*** 174,190 ****
+      {
+        int newSize=  min(valign(oldLimit - heap + delta), heapLimit);
+        int newDelta= newSize - heapSize;
+!       dprintf(("uxGrowMemory: %p By: %d(%d) (%d -> %d)\n", oldLimit, newDelta, delta, heapSize, newSize));
+        assert(0 == (newDelta & ~pageMask));
+        assert(0 == (newSize  & ~pageMask));
+        assert(newDelta >= 0);
+        if (newDelta)
+  	{
+! 	  dprintf(("was: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  if (overallocateMemory)
+  	    {
+  	      char *base= heap + heapSize;
+! 	      dprintf(("remap: %p + 0x%x (%d)\n", base, newDelta, newDelta));
+  	      if (MAP_FAILED == mmap(base, newDelta, MAP_PROT, MAP_FLAGS | MAP_FIXED, devZero, heapSize))
+  		{
+  		  perror("mmap");
+--- 174,190 ----
+      {
+        int newSize=  min(valign(oldLimit - heap + delta), heapLimit);
+        int newDelta= newSize - heapSize;
+!       debugf(("uxGrowMemory: %p By: %d(%d) (%d -> %d)\n", oldLimit, newDelta, delta, heapSize, newSize));
+        assert(0 == (newDelta & ~pageMask));
+        assert(0 == (newSize  & ~pageMask));
+        assert(newDelta >= 0);
+        if (newDelta)
+  	{
+! 	  debugf(("was: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  if (overallocateMemory)
+  	    {
+  	      char *base= heap + heapSize;
+! 	      debugf(("remap: %p + 0x%x (%d)\n", base, newDelta, newDelta));
+  	      if (MAP_FAILED == mmap(base, newDelta, MAP_PROT, MAP_FLAGS | MAP_FIXED, devZero, heapSize))
+  		{
+  		  perror("mmap");
+***************
+*** 192,198 ****
+  		}
+  	    }
+  	  heapSize += newDelta;
+! 	  dprintf(("now: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  assert(0 == (heapSize  & ~pageMask));
+  	}
+        return heap + heapSize;
+--- 192,198 ----
+  		}
+  	    }
+  	  heapSize += newDelta;
+! 	  debugf(("now: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  assert(0 == (heapSize  & ~pageMask));
+  	}
+        return heap + heapSize;
+***************
+*** 209,225 ****
+      {
+        int newSize=  max(0, valign((char *)oldLimit - heap - delta));
+        int newDelta= heapSize - newSize;
+!       dprintf(("uxGrowMemory: %p By: %d(%d) (%d -> %d)\n", oldLimit, newDelta, delta, heapSize, newSize));
+        assert(0 == (newDelta & ~pageMask));
+        assert(0 == (newSize  & ~pageMask));
+        assert(newDelta >= 0);
+        if (newDelta)
+  	{
+! 	  dprintf(("was: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  if (overallocateMemory)
+  	    {
+  	      char *base= heap + heapSize - newDelta;
+! 	      dprintf(("unmap: %p + 0x%x (%d)\n", base, newDelta, newDelta));
+  	      if (munmap(base, newDelta) < 0)
+  		{
+  		  perror("unmap");
+--- 209,225 ----
+      {
+        int newSize=  max(0, valign((char *)oldLimit - heap - delta));
+        int newDelta= heapSize - newSize;
+!       debugf(("uxGrowMemory: %p By: %d(%d) (%d -> %d)\n", oldLimit, newDelta, delta, heapSize, newSize));
+        assert(0 == (newDelta & ~pageMask));
+        assert(0 == (newSize  & ~pageMask));
+        assert(newDelta >= 0);
+        if (newDelta)
+  	{
+! 	  debugf(("was: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  if (overallocateMemory)
+  	    {
+  	      char *base= heap + heapSize - newDelta;
+! 	      debugf(("unmap: %p + 0x%x (%d)\n", base, newDelta, newDelta));
+  	      if (munmap(base, newDelta) < 0)
+  		{
+  		  perror("unmap");
+***************
+*** 227,233 ****
+  		}
+  	    }
+  	  heapSize -= newDelta;
+! 	  dprintf(("now: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  assert(0 == (heapSize  & ~pageMask));
+  	}
+        return heap + heapSize;
+--- 227,233 ----
+  		}
+  	    }
+  	  heapSize -= newDelta;
+! 	  debugf(("now: %p %p %p = 0x%x (%d) bytes\n", heap, heap + heapSize, heap + heapLimit, heapSize, heapSize));
+  	  assert(0 == (heapSize  & ~pageMask));
+  	}
+        return heap + heapSize;
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDev.c.orig	2006-04-18 08:57:36.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDev.c	2017-11-06 20:27:31.184550047 +0900
+***************
+*** 73,79 ****
+  #endif
+  
+  
+! static void dprintf(const char *fmt, ...)
+  {
+  #if (DEBUG)
+    va_list ap;
+--- 73,79 ----
+  #endif
+  
+  
+! static void debugf(const char *fmt, ...)
+  {
+  #if (DEBUG)
+    va_list ap;
+***************
+*** 154,160 ****
+  
+  static void enqueueKeyboardEvent(int key, int up, int modifiers)
+  {
+!   dprintf("KEY %3d %02x %c %s mod %02x\n",
+  	  key, key, ((key > 32) && (key < 127)) ? key : ' ',
+  	  up ? "UP" : "DOWN", modifiers);
+  
+--- 154,160 ----
+  
+  static void enqueueKeyboardEvent(int key, int up, int modifiers)
+  {
+!   debugf("KEY %3d %02x %c %s mod %02x\n",
+  	  key, key, ((key > 32) && (key < 127)) ? key : ' ',
+  	  up ? "UP" : "DOWN", modifiers);
+  
+***************
+*** 195,201 ****
+    buttonState= b;
+    mousePosition= fb->cursorPosition;
+    if (b)
+!     dprintf("mouse %02x at %4d,%4d mod %02x\n",
+  	    b, mousePosition.x, mousePosition.y, modifierState);
+    recordMouseEvent();
+  }
+--- 195,201 ----
+    buttonState= b;
+    mousePosition= fb->cursorPosition;
+    if (b)
+!     debugf("mouse %02x at %4d,%4d mod %02x\n",
+  	    b, mousePosition.x, mousePosition.y, modifierState);
+    recordMouseEvent();
+  }
+***************
+*** 274,287 ****
+  
+  static sqInt display_ioHasDisplayDepth(sqInt i)
+  {
+!   dprintf("hasDisplayDepth %d (%d) => %d\n", i, fb_depth(fb), (i == fb_depth(fb)));
+    return (i == fb_depth(fb));
+  }
+  
+  
+  static void openDisplay(void)
+  {
+!   dprintf("openDisplay\n");
+    openMouse();
+    openKeyboard();
+    openFramebuffer();
+--- 274,287 ----
+  
+  static sqInt display_ioHasDisplayDepth(sqInt i)
+  {
+!   debugf("hasDisplayDepth %d (%d) => %d\n", i, fb_depth(fb), (i == fb_depth(fb)));
+    return (i == fb_depth(fb));
+  }
+  
+  
+  static void openDisplay(void)
+  {
+!   debugf("openDisplay\n");
+    openMouse();
+    openKeyboard();
+    openFramebuffer();
+***************
+*** 293,299 ****
+  
+  static void closeDisplay(void)
+  {
+!   dprintf("closeDisplay\n");
+    closeFramebuffer();
+    closeKeyboard();
+    closeMouse();
+--- 293,299 ----
+  
+  static void closeDisplay(void)
+  {
+!   debugf("closeDisplay\n");
+    closeFramebuffer();
+    closeKeyboard();
+    closeMouse();
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDevKeyboard.c.orig	2006-04-06 02:40:27.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDevKeyboard.c	2017-11-06 20:27:31.184550047 +0900
+***************
+*** 79,85 ****
+    if (kstate & (1 << KG_CTRL))	modifierState |= CtrlKeyBit;
+    if (kstate & (1 << KG_ALT))	modifierState |= CommandKeyBit;
+    if (kstate & (1 << KG_ALTGR))	modifierState |= OptionKeyBit;
+!   dprintf("state %02x mod %02x\n", kstate, modifierState);
+  }
+  
+  
+--- 79,85 ----
+    if (kstate & (1 << KG_CTRL))	modifierState |= CtrlKeyBit;
+    if (kstate & (1 << KG_ALT))	modifierState |= CommandKeyBit;
+    if (kstate & (1 << KG_ALTGR))	modifierState |= OptionKeyBit;
+!   debugf("state %02x mod %02x\n", kstate, modifierState);
+  }
+  
+  
+***************
+*** 115,133 ****
+    int rep= (!up) && (prev == code);
+    prev= up ? 0 : code;
+  
+!   dprintf("+++ code %d up %d prev %d rep %d map %p\n", code, up, prev, rep, keyMap);
+  
+    if (keyMap)
+      {
+        int sym=  keyMap[code];
+        int type= KTYP(sym);
+!       dprintf("+++ sym %x (%02x) type %d\n", sym, sym & 255, type);
+        sym &= 255;
+        if (type >= 0xf0)		// shiftable
+  	type -= 0xf0;
+        if (KT_LETTER == type)	// lockable
+  	type= KT_LATIN;
+!       dprintf("+++ type %d\n", type);
+        switch (type)
+  	{
+  	case KT_LATIN:
+--- 115,133 ----
+    int rep= (!up) && (prev == code);
+    prev= up ? 0 : code;
+  
+!   debugf("+++ code %d up %d prev %d rep %d map %p\n", code, up, prev, rep, keyMap);
+  
+    if (keyMap)
+      {
+        int sym=  keyMap[code];
+        int type= KTYP(sym);
+!       debugf("+++ sym %x (%02x) type %d\n", sym, sym & 255, type);
+        sym &= 255;
+        if (type >= 0xf0)		// shiftable
+  	type -= 0xf0;
+        if (KT_LETTER == type)	// lockable
+  	type= KT_LATIN;
+!       debugf("+++ type %d\n", type);
+        switch (type)
+  	{
+  	case KT_LATIN:
+***************
+*** 170,176 ****
+  
+  	default:
+  	  if (type > KT_SLOCK)
+! 	    dprintf("ignoring unknown scancode %d.%d\n", type, sym);
+  	  break;
+  	}
+      }
+--- 170,176 ----
+  
+  	default:
+  	  if (type > KT_SLOCK)
+! 	    debugf("ignoring unknown scancode %d.%d\n", type, sym);
+  	  break;
+  	}
+      }
+***************
+*** 182,194 ****
+  
+  static int kb_handleEvents(_self)
+  {
+!   dprintf("+++ kb_handleEvents\n");
+    while (fdReadable(self->fd, 0))
+      {
+        unsigned char buf;
+        if (1 == read(self->fd, &buf, 1))
+  	{
+! 	  dprintf("+++ kb_translate %3d %02x + %d\n", buf & 127, buf & 127, (buf >> 7) & 1);
+  	  kb_translate(self, buf & 127, (buf >> 7) & 1);
+  	}
+      }
+--- 182,194 ----
+  
+  static int kb_handleEvents(_self)
+  {
+!   debugf("+++ kb_handleEvents\n");
+    while (fdReadable(self->fd, 0))
+      {
+        unsigned char buf;
+        if (1 == read(self->fd, &buf, 1))
+  	{
+! 	  debugf("+++ kb_translate %3d %02x + %d\n", buf & 127, buf & 127, (buf >> 7) & 1);
+  	  kb_translate(self, buf & 127, (buf >> 7) & 1);
+  	}
+      }
+***************
+*** 339,345 ****
+        ioctl(self->fd, KDSKBMODE, self->kbMode);
+        tcsetattr(self->fd, TCSANOW, &self->tcAttr);
+        close(self->fd);
+!       dprintf("%s (%d) closed\n", self->kbName, self->fd);
+        self->fd= -1;
+      }
+  }
+--- 339,345 ----
+        ioctl(self->fd, KDSKBMODE, self->kbMode);
+        tcsetattr(self->fd, TCSANOW, &self->tcAttr);
+        close(self->fd);
+!       debugf("%s (%d) closed\n", self->kbName, self->fd);
+        self->fd= -1;
+      }
+  }
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDevMouseADB.c.orig	2006-04-06 02:40:27.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDevMouseADB.c	2017-11-06 20:27:31.192546089 +0900
+***************
+*** 42,48 ****
+   */
+  
+  
+! static void ms_adb_init(_self) { dprintf("ADB init\n"); }
+  
+  
+  static void ms_adb_handleEvents(_self)
+--- 42,48 ----
+   */
+  
+  
+! static void ms_adb_init(_self) { debugf("ADB init\n"); }
+  
+  
+  static void ms_adb_handleEvents(_self)
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDevFramebuffer.c.orig	2006-04-06 02:40:27.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDevFramebuffer.c	2017-11-06 20:27:31.184550047 +0900
+***************
+*** 513,519 ****
+    self->size= fb_height(self) * self->fix.line_length;
+    self->pitch= self->fix.line_length / self->var.bits_per_pixel * 8;
+  
+!   dprintf("%s: %dx%dx%d+%x+%x (%dx%d) %s, rgb %d+%d %d+%d %d+%d pitch %d(%d)\n", self->fbName,
+  	  self->var.xres, self->var.yres, self->var.bits_per_pixel, self->var.xoffset, self->var.yoffset,
+  	  self->var.xres_virtual, self->var.yres_virtual,
+  	  visualName(self),
+--- 513,519 ----
+    self->size= fb_height(self) * self->fix.line_length;
+    self->pitch= self->fix.line_length / self->var.bits_per_pixel * 8;
+  
+!   debugf("%s: %dx%dx%d+%x+%x (%dx%d) %s, rgb %d+%d %d+%d %d+%d pitch %d(%d)\n", self->fbName,
+  	  self->var.xres, self->var.yres, self->var.bits_per_pixel, self->var.xoffset, self->var.yoffset,
+  	  self->var.xres_virtual, self->var.yres_virtual,
+  	  visualName(self),
+***************
+*** 612,618 ****
+    assert(self->addr == 0);
+    self->addr= (char *)mmap(0, self->size, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, 0);
+    if (self->addr == (char *)MAP_FAILED) fatalError("mmap");
+!   dprintf("%s: mapped at %p + %ld\n", self->fbName, self->addr, self->size);
+  }
+  
+  
+--- 612,618 ----
+    assert(self->addr == 0);
+    self->addr= (char *)mmap(0, self->size, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, 0);
+    if (self->addr == (char *)MAP_FAILED) fatalError("mmap");
+!   debugf("%s: mapped at %p + %ld\n", self->fbName, self->addr, self->size);
+  }
+  
+  
+***************
+*** 622,628 ****
+      {
+        munmap(self->addr, self->size);
+        self->addr= 0;
+!       dprintf("%s: unmapped\n", self->fbName);
+      }
+  }
+  
+--- 622,628 ----
+      {
+        munmap(self->addr, self->size);
+        self->addr= 0;
+!       debugf("%s: unmapped\n", self->fbName);
+      }
+  }
+  
+***************
+*** 679,685 ****
+  
+    self->kb= kb;
+  
+!   dprintf("using: %s (%d)\n", self->fbName, self->fd);
+  
+    fb_initVisual(self);
+    fb_initBuffer(self);
+--- 679,685 ----
+  
+    self->kb= kb;
+  
+!   debugf("using: %s (%d)\n", self->fbName, self->fd);
+  
+    fb_initVisual(self);
+    fb_initBuffer(self);
+***************
+*** 697,703 ****
+    if (self->fd >= 0)
+      {
+        close(self->fd);
+!       dprintf("%s (%d) closed\n", self->fbName, self->fd);
+        self->fd= -1;
+      }
+    self->kb= 0;
+--- 697,703 ----
+    if (self->fd >= 0)
+      {
+        close(self->fd);
+!       debugf("%s (%d) closed\n", self->fbName, self->fd);
+        self->fd= -1;
+      }
+    self->kb= 0;
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDevMousePS2.c.orig	2006-04-06 02:40:27.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDevMousePS2.c	2017-11-06 20:27:31.192546089 +0900
+***************
+*** 67,73 ****
+  static void ms_ps2_flush(_self)
+  {
+    unsigned char buf[32];
+!   dprintf("%s: flush\n", self->msName);
+    while (ms_read(self, buf, sizeof(buf), 1, PS2_FLUSH_DELAY))
+      ;
+  }
+--- 67,73 ----
+  static void ms_ps2_flush(_self)
+  {
+    unsigned char buf[32];
+!   debugf("%s: flush\n", self->msName);
+    while (ms_read(self, buf, sizeof(buf), 1, PS2_FLUSH_DELAY))
+      ;
+  }
+***************
+*** 111,125 ****
+  {
+    unsigned char buf[1];
+    int i;
+!   dprintf("%s: send\n", self->msName);
+    for (i= 0;  i < len;  ++i)
+      {
+      resend:
+        write(self->fd, command + i, 1);
+!       dprintf(">%02x\n", command[i]);
+        if (1 != ms_read(self, buf, 1, 1, PS2_SEND_DELAY))
+  	{
+! 	  dprintf("%s: send failed\n", self->msName);
+  	  return 0;
+  	}
+        switch (buf[0])
+--- 111,125 ----
+  {
+    unsigned char buf[1];
+    int i;
+!   debugf("%s: send\n", self->msName);
+    for (i= 0;  i < len;  ++i)
+      {
+      resend:
+        write(self->fd, command + i, 1);
+!       debugf(">%02x\n", command[i]);
+        if (1 != ms_read(self, buf, 1, 1, PS2_SEND_DELAY))
+  	{
+! 	  debugf("%s: send failed\n", self->msName);
+  	  return 0;
+  	}
+        switch (buf[0])
+***************
+*** 131,137 ****
+  	  fprintf(stderr, "%s: error response in send\n", self->msName);
+  	  return 0;
+  	case PS2_RESEND:
+! 	  dprintf("%s: resend\n", self->msName);
+  	  goto resend;
+  	default:
+  	  fprintf(stderr, "%s: illegal response %02x in send\n", self->msName, buf[0]);
+--- 131,137 ----
+  	  fprintf(stderr, "%s: error response in send\n", self->msName);
+  	  return 0;
+  	case PS2_RESEND:
+! 	  debugf("%s: resend\n", self->msName);
+  	  goto resend;
+  	default:
+  	  fprintf(stderr, "%s: illegal response %02x in send\n", self->msName, buf[0]);
+***************
+*** 145,153 ****
+  static void ms_ps2_disable(_self)
+  {
+    unsigned char command[]= { PS2_DISABLE };
+!   dprintf("%s: disable\n", self->msName);
+    write(self->fd, command, 1);
+!   dprintf(">%02x\n", command[0]);
+    while (1 == ms_read(self, command, 1, 1, PS2_DISABLE_DELAY))
+      if (PS2_OK == command[0])
+        break;
+--- 145,153 ----
+  static void ms_ps2_disable(_self)
+  {
+    unsigned char command[]= { PS2_DISABLE };
+!   debugf("%s: disable\n", self->msName);
+    write(self->fd, command, 1);
+!   debugf(">%02x\n", command[0]);
+    while (1 == ms_read(self, command, 1, 1, PS2_DISABLE_DELAY))
+      if (PS2_OK == command[0])
+        break;
+***************
+*** 157,163 ****
+  static int ms_ps2_enable(_self)
+  {
+    unsigned char command[]= { PS2_ENABLE };
+!   dprintf("%s: enable\n", self->msName);
+    return ms_ps2_send(self, command, sizeof(command));
+  }
+  
+--- 157,163 ----
+  static int ms_ps2_enable(_self)
+  {
+    unsigned char command[]= { PS2_ENABLE };
+!   debugf("%s: enable\n", self->msName);
+    return ms_ps2_send(self, command, sizeof(command));
+  }
+  
+***************
+*** 165,176 ****
+  static int ms_ps2_reset(_self)
+  {
+    unsigned char command[]= { PS2_RESET }, buf[2];
+!   dprintf("%s: reset\n", self->msName);
+    if (!ms_ps2_send(self, command, sizeof(command)))
+      return -1;
+    if (2 == ms_read(self, buf, 2, 2, PS2_RESET_DELAY))
+      {
+!       dprintf("%s: response %02x %02x\n", self->msName, buf[0], buf[1]);
+        switch (buf[0])
+  	{
+  	case PS2_SELFTEST_OK:
+--- 165,176 ----
+  static int ms_ps2_reset(_self)
+  {
+    unsigned char command[]= { PS2_RESET }, buf[2];
+!   debugf("%s: reset\n", self->msName);
+    if (!ms_ps2_send(self, command, sizeof(command)))
+      return -1;
+    if (2 == ms_read(self, buf, 2, 2, PS2_RESET_DELAY))
+      {
+!       debugf("%s: response %02x %02x\n", self->msName, buf[0], buf[1]);
+        switch (buf[0])
+  	{
+  	case PS2_SELFTEST_OK:
+***************
+*** 180,186 ****
+  	  fprintf(stderr, "%s: self-test failed\n", self->msName);
+  	  break;
+  	default:
+! 	  dprintf("%s: bad response\n", self->msName);
+  	  break;
+  	}
+      }
+--- 180,186 ----
+  	  fprintf(stderr, "%s: self-test failed\n", self->msName);
+  	  break;
+  	default:
+! 	  debugf("%s: bad response\n", self->msName);
+  	  break;
+  	}
+      }
+***************
+*** 189,195 ****
+       up the mouse id immediately in the flush(), so the only harm done
+       is a misleading "reset failed" message while debugging.  */
+    ms_ps2_flush(self);
+!   dprintf("%s: reset failed\n", self->msName);
+    return -1;
+  }
+  
+--- 189,195 ----
+       up the mouse id immediately in the flush(), so the only harm done
+       is a misleading "reset failed" message while debugging.  */
+    ms_ps2_flush(self);
+!   debugf("%s: reset failed\n", self->msName);
+    return -1;
+  }
+  
+***************
+*** 199,205 ****
+    int id;
+    ms_ps2_disable(self);
+    id= ms_ps2_reset(self);
+!   dprintf("%s: mouse id %02x\n", self->msName, id);
+    ms_ps2_enable(self);
+  }
+  
+--- 199,205 ----
+    int id;
+    ms_ps2_disable(self);
+    id= ms_ps2_reset(self);
+!   debugf("%s: mouse id %02x\n", self->msName, id);
+    ms_ps2_enable(self);
+  }
+  
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDevKeymap.c.orig	2006-04-06 02:40:27.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDevKeymap.c	2017-11-06 20:27:31.184550047 +0900
+***************
+*** 161,167 ****
+  {
+    int map;
+  
+!   dprintf("loading kernel keymap\n");
+  
+    if (!(self->keyMaps= (unsigned short **)calloc(MAX_NR_KEYMAPS, sizeof(unsigned short *))))
+      outOfMemory();
+--- 161,167 ----
+  {
+    int map;
+  
+!   debugf("loading kernel keymap\n");
+  
+    if (!(self->keyMaps= (unsigned short **)calloc(MAX_NR_KEYMAPS, sizeof(unsigned short *))))
+      outOfMemory();
+***************
+*** 191,197 ****
+  	}
+      }
+  
+!   dprintf("kernel keymap loaded\n");
+  }
+  
+  
+--- 191,197 ----
+  	}
+      }
+  
+!   debugf("kernel keymap loaded\n");
+  }
+  
+  
+***************
+*** 200,206 ****
+    if (!mapfile)
+      kb_loadKernelKeyMap(self);
+    else if ((kb_loadKeys(self, mapfile)))
+!     dprintf("using keymap '%s'\n", mapfile);
+    else
+      fatal("could not load keymap '%s'\n", mapfile);
+  }
+--- 200,206 ----
+    if (!mapfile)
+      kb_loadKernelKeyMap(self);
+    else if ((kb_loadKeys(self, mapfile)))
+!     debugf("using keymap '%s'\n", mapfile);
+    else
+      fatal("could not load keymap '%s'\n", mapfile);
+  }
+*** ./platforms/unix/vm-display-fbdev/sqUnixFBDevMouse.c.orig	2006-04-06 02:40:27.000000000 +0900
+--- ./platforms/unix/vm-display-fbdev/sqUnixFBDevMouse.c	2017-11-06 20:27:31.192546089 +0900
+***************
+*** 97,103 ****
+  	int i= 0;
+  	while (i < count)
+  	  {
+! 	    dprintf("<%02x\n", out[i]);
+  	    ++i;
+  	  }
+        }
+--- 97,103 ----
+  	int i= 0;
+  	while (i < count)
+  	  {
+! 	    debugf("<%02x\n", out[i]);
+  	    ++i;
+  	  }
+        }
+***************
+*** 205,211 ****
+  	}
+      }
+  
+!   dprintf("using: %s (%d), %s\n", self->msName, self->fd, msProto);
+  
+    self->init= init;
+    self->handleEvents= handler;
+--- 205,211 ----
+  	}
+      }
+  
+!   debugf("using: %s (%d), %s\n", self->msName, self->fd, msProto);
+  
+    self->init= init;
+    self->handleEvents= handler;
+***************
+*** 219,225 ****
+    if (self->fd >= 0)
+      {
+        close(self->fd);
+!       dprintf("%s (%d) closed\n", self->msName, self->fd);
+        self->fd= -1;
+      }
+  }
+--- 219,225 ----
+    if (self->fd >= 0)
+      {
+        close(self->fd);
+!       debugf("%s (%d) closed\n", self->msName, self->fd);
+        self->fd= -1;
+      }
+  }
