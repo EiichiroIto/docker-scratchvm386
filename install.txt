@@ -1,0 +1,13 @@
+sudo apt install docker docker-compose
+sudo ./build.sh 
+sudo ./run.sh 
+
+cd /usr/local
+sudo rm bin/squeak 
+sudo rm lib/squeak/
+sudo rm -r lib/squeak/
+sudo rm -r doc/squeak/
+sudo tar xzf ~/working/docker-scratchvm386/scratchvm386.tgz 
+sudo apt install libx11-6:i386 libxext6:i386 libasound2:i386 libpango-1.0-0:i386 libcairo2:i386 libpangocairo-1.0-0:i386
+ldd /usr/local/lib/squeak/3.9-8/* | grep not
+
